@@ -258,7 +258,6 @@ __global__ void ms_deformable_im2col_gpu_kernel(const int n,
     const int sampling_index = _temp; 
     const int m_col = _temp % num_heads;
     _temp /= num_heads;
-    const int q_col = _temp % num_query;
     _temp /= num_query;
     const int b_col = _temp;
 
@@ -328,7 +327,6 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_blocksize_aware_reduce_v1(co
     const int sampling_index = _temp; 
     const int m_col = _temp % num_heads;
     _temp /= num_heads;
-    const int q_col = _temp % num_query;
     _temp /= num_query;
     const int b_col = _temp;
 
@@ -369,10 +367,10 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_blocksize_aware_reduce_v1(co
         {
           ms_deform_attn_col2im_bilinear(
             data_value_ptr, spatial_h, spatial_w, num_heads, channels, h_im, w_im, m_col, c_col,
-            top_grad, weight, grad_value_ptr, 
+            top_grad, weight, grad_value_ptr,
             cache_grad_sampling_loc+(threadIdx.x << 1), cache_grad_attn_weight+threadIdx.x);
         }
-        
+
         __syncthreads();
         if (tid == 0)
         {
@@ -385,8 +383,8 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_blocksize_aware_reduce_v1(co
             _grad_a += cache_grad_attn_weight[tid];
             sid += 2;
           }
-          
-          
+
+
           *grad_sampling_loc = _grad_w;
           *(grad_sampling_loc + 1) = _grad_h;
           *grad_attn_weight = _grad_a;
@@ -430,10 +428,9 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_blocksize_aware_reduce_v2(co
     int _temp = index;
     const int c_col = _temp % channels;
     _temp /= channels;
-    const int sampling_index = _temp; 
+    const int sampling_index = _temp;
     const int m_col = _temp % num_heads;
     _temp /= num_heads;
-    const int q_col = _temp % num_query;
     _temp /= num_query;
     const int b_col = _temp;
 
@@ -474,10 +471,10 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_blocksize_aware_reduce_v2(co
         {
           ms_deform_attn_col2im_bilinear(
             data_value_ptr, spatial_h, spatial_w, num_heads, channels, h_im, w_im, m_col, c_col,
-            top_grad, weight, grad_value_ptr, 
+            top_grad, weight, grad_value_ptr,
             cache_grad_sampling_loc+(threadIdx.x << 1), cache_grad_attn_weight+threadIdx.x);
         }
-        
+
         __syncthreads();
 
         for (unsigned int s=blockSize/2; s>0; s>>=1)
@@ -493,7 +490,7 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_blocksize_aware_reduce_v2(co
         }
 
         if (tid == 0)
-        { 
+        {
           *grad_sampling_loc = cache_grad_sampling_loc[0];
           *(grad_sampling_loc + 1) = cache_grad_sampling_loc[1];
           *grad_attn_weight = cache_grad_attn_weight[0];
@@ -538,10 +535,9 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_reduce_v1(const int n,
     int _temp = index;
     const int c_col = _temp % channels;
     _temp /= channels;
-    const int sampling_index = _temp; 
+    const int sampling_index = _temp;
     const int m_col = _temp % num_heads;
     _temp /= num_heads;
-    const int q_col = _temp % num_query;
     _temp /= num_query;
     const int b_col = _temp;
 
@@ -582,10 +578,10 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_reduce_v1(const int n,
         {
           ms_deform_attn_col2im_bilinear(
             data_value_ptr, spatial_h, spatial_w, num_heads, channels, h_im, w_im, m_col, c_col,
-            top_grad, weight, grad_value_ptr, 
+            top_grad, weight, grad_value_ptr,
             cache_grad_sampling_loc+(threadIdx.x << 1), cache_grad_attn_weight+threadIdx.x);
         }
-        
+
         __syncthreads();
         if (tid == 0)
         {
@@ -598,8 +594,8 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_reduce_v1(const int n,
             _grad_a += cache_grad_attn_weight[tid];
             sid += 2;
           }
-          
-          
+
+
           *grad_sampling_loc = _grad_w;
           *(grad_sampling_loc + 1) = _grad_h;
           *grad_attn_weight = _grad_a;
@@ -643,10 +639,9 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_reduce_v2(const int n,
     int _temp = index;
     const int c_col = _temp % channels;
     _temp /= channels;
-    const int sampling_index = _temp; 
+    const int sampling_index = _temp;
     const int m_col = _temp % num_heads;
     _temp /= num_heads;
-    const int q_col = _temp % num_query;
     _temp /= num_query;
     const int b_col = _temp;
 
@@ -687,10 +682,10 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_reduce_v2(const int n,
         {
           ms_deform_attn_col2im_bilinear(
             data_value_ptr, spatial_h, spatial_w, num_heads, channels, h_im, w_im, m_col, c_col,
-            top_grad, weight, grad_value_ptr, 
+            top_grad, weight, grad_value_ptr,
             cache_grad_sampling_loc+(threadIdx.x << 1), cache_grad_attn_weight+threadIdx.x);
         }
-        
+
         __syncthreads();
 
         for (unsigned int s=blockDim.x/2, spre=blockDim.x; s>0; s>>=1, spre>>=1)
@@ -706,7 +701,7 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_reduce_v2(const int n,
               cache_grad_attn_weight[tid] += cache_grad_attn_weight[tid + (s << 1)];
               cache_grad_sampling_loc[xid1] += cache_grad_sampling_loc[xid2 + (s << 1)];
               cache_grad_sampling_loc[xid1 + 1] += cache_grad_sampling_loc[xid2 + 1 + (s << 1)];
-            } 
+            }
           }
           __syncthreads();
         }
@@ -756,10 +751,9 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_reduce_v2_multi_blocks(const
     int _temp = index;
     const int c_col = _temp % channels;
     _temp /= channels;
-    const int sampling_index = _temp; 
+    const int sampling_index = _temp;
     const int m_col = _temp % num_heads;
     _temp /= num_heads;
-    const int q_col = _temp % num_query;
     _temp /= num_query;
     const int b_col = _temp;
 
@@ -800,10 +794,10 @@ __global__ void ms_deformable_col2im_gpu_kernel_shm_reduce_v2_multi_blocks(const
         {
           ms_deform_attn_col2im_bilinear(
             data_value_ptr, spatial_h, spatial_w, num_heads, channels, h_im, w_im, m_col, c_col,
-            top_grad, weight, grad_value_ptr, 
+            top_grad, weight, grad_value_ptr,
             cache_grad_sampling_loc+(threadIdx.x << 1), cache_grad_attn_weight+threadIdx.x);
         }
-        
+
         __syncthreads();
 
         for (unsigned int s=blockDim.x/2, spre=blockDim.x; s>0; s>>=1, spre>>=1)
@@ -866,10 +860,9 @@ __global__ void ms_deformable_col2im_gpu_kernel_gm(const int n,
     int _temp = index;
     const int c_col = _temp % channels;
     _temp /= channels;
-    const int sampling_index = _temp; 
+    const int sampling_index = _temp;
     const int m_col = _temp % num_heads;
     _temp /= num_heads;
-    const int q_col = _temp % num_query;
     _temp /= num_query;
     const int b_col = _temp;
 
